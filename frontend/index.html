@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OMNIBRIDGE — Multimodal AI Platform</title>
+    <meta name="description" content="OMNIBRIDGE is a professional multimodal AI platform for intelligent conversations, file analysis, and image understanding.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/styles.css">
+  </head>
+  <body>
+
+    <!-- ======= WELCOME SPLASH OVERLAY ======= -->
+    <div id="welcome-overlay" class="welcome-overlay" aria-modal="true" role="dialog" aria-label="Welcome to OMNIBRIDGE">
+      <div class="welcome-backdrop"></div>
+      <canvas id="welcome-canvas" class="welcome-canvas"></canvas>
+      <div class="welcome-card">
+        <div class="welcome-logo-ring">
+          <svg class="welcome-logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" stroke="url(#lg1)" stroke-width="2.5"/>
+            <path d="M14 24 C14 18 24 10 34 24 C24 38 14 30 14 24Z" fill="url(#lg2)" opacity="0.9"/>
+            <circle cx="24" cy="24" r="4" fill="white" opacity="0.95"/>
+            <defs>
+              <linearGradient id="lg1" x1="4" y1="4" x2="44" y2="44">
+                <stop offset="0%" stop-color="#7c6dff"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+              <linearGradient id="lg2" x1="14" y1="10" x2="34" y2="38">
+                <stop offset="0%" stop-color="#7c6dff"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="welcome-eyebrow">Multimodal AI Platform</div>
+        <h1 class="welcome-title">Welcome to<br><span class="welcome-brand">OMNIBRIDGE</span></h1>
+        <p class="welcome-subtitle">
+          Your intelligent workspace for conversations, document analysis,
+          image understanding, and beyond. Powered by cutting-edge AI.
+        </p>
+        <div class="welcome-features">
+          <div class="welcome-feature">
+            <span class="welcome-feature-icon">💬</span>
+            <span>Natural conversations</span>
+          </div>
+          <div class="welcome-feature">
+            <span class="welcome-feature-icon">📄</span>
+            <span>Document analysis</span>
+          </div>
+          <div class="welcome-feature">
+            <span class="welcome-feature-icon">🖼️</span>
+            <span>Image understanding</span>
+          </div>
+          <div class="welcome-feature">
+            <span class="welcome-feature-icon">⚡</span>
+            <span>Instant responses</span>
+          </div>
+        </div>
+        <button id="welcome-start-btn" class="welcome-start-btn">
+          <span>Start Chatting</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="welcome-guest-note">Continue as guest · No account required</p>
+      </div>
+    </div>
+
+    <!-- ======= EXPIRED SESSION MODAL ======= -->
+    <div id="expired-overlay" class="expired-overlay" aria-modal="true" role="dialog" aria-label="Session limit reached" hidden>
+      <div class="expired-backdrop"></div>
+      <div class="expired-card">
+        <div class="expired-icon-ring">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M16 6v10l6 4" stroke="url(#tg)" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="16" cy="16" r="13" stroke="url(#tg)" stroke-width="2"/>
+            <defs>
+              <linearGradient id="tg" x1="3" y1="3" x2="29" y2="29">
+                <stop offset="0%" stop-color="#7c6dff"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h2 class="expired-title">Guest Session Complete</h2>
+        <p class="expired-subtitle">
+          You've used your complimentary guest messages. Sign in for unlimited access, file uploads, image analysis, and full conversation history.
+        </p>
+        <div class="expired-perks">
+          <div class="expired-perk"><span class="perk-check">✓</span> Unlimited conversations</div>
+          <div class="expired-perk"><span class="perk-check">✓</span> File & document uploads</div>
+          <div class="expired-perk"><span class="perk-check">✓</span> Image analysis</div>
+          <div class="expired-perk"><span class="perk-check">✓</span> Full conversation history</div>
+        </div>
+        <div class="expired-actions">
+          <a id="expired-google-btn" class="expired-google-btn" href="/auth/google/start?next=/">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Continue with Google
+          </a>
+          <button id="expired-email-btn" class="expired-email-btn" type="button">Sign in with Email</button>
+        </div>
+        <button id="expired-close-btn" class="expired-close-btn" type="button">Maybe later</button>
+      </div>
+    </div>
+
+    <!-- ======= MAIN APP SHELL ======= -->
+    <div class="app-shell" id="app-shell">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-brand">
+            <div class="brand-icon">
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="16" r="13" stroke="url(#sb1)" stroke-width="2"/>
+                <path d="M9 16 C9 12 16 7 23 16 C16 25 9 20 9 16Z" fill="url(#sb2)" opacity="0.9"/>
+                <circle cx="16" cy="16" r="2.5" fill="white" opacity="0.9"/>
+                <defs>
+                  <linearGradient id="sb1" x1="3" y1="3" x2="29" y2="29">
+                    <stop offset="0%" stop-color="#7c6dff"/>
+                    <stop offset="100%" stop-color="#38bdf8"/>
+                  </linearGradient>
+                  <linearGradient id="sb2" x1="9" y1="7" x2="23" y2="25">
+                    <stop offset="0%" stop-color="#7c6dff"/>
+                    <stop offset="100%" stop-color="#38bdf8"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <span class="brand-name">OMNIBRIDGE</span>
+          </div>
+          <button id="new-chat-btn" class="new-chat-btn" type="button" title="New conversation">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <!-- System Status -->
+        <div class="sidebar-status-strip" id="sidebar-status-strip">
+          <div class="status-indicator" id="status-dot"></div>
+          <span id="status-text" class="status-label">Connecting…</span>
+        </div>
+
+        <!-- Account / Auth Card -->
+        <div class="auth-panel" id="auth-panel">
+          <div class="auth-panel-head">
+            <div class="auth-avatar" id="auth-avatar">G</div>
+            <div class="auth-panel-info">
+              <div class="auth-panel-name" id="auth-title">Guest</div>
+              <div class="auth-panel-sub" id="auth-panel-sub">Limited access</div>
+            </div>
+          </div>
+
+          <div id="auth-chips" class="auth-chips"></div>
+
+          <div id="auth-actions-wrap" class="auth-actions-wrap">
+            <a id="google-login-button" class="btn-google" href="/auth/google/start?next=/">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+              </svg>
+              Continue with Google
+            </a>
+            <button id="toggle-auth-form-button" class="btn-ghost" type="button">Email sign in</button>
+            <button id="logout-button" class="btn-ghost" type="button" hidden>Sign out</button>
+          </div>
+
+          <form id="auth-form" class="auth-form" hidden>
+            <input id="auth-display-name" class="auth-input" type="text" placeholder="Display name (for sign up)">
+            <input id="auth-email" class="auth-input" type="email" autocomplete="email" placeholder="Email address" required>
+            <input id="auth-password" class="auth-input" type="password" autocomplete="current-password" placeholder="Password (min 8 chars)" required>
+            <div class="auth-form-row">
+              <button id="auth-signup-button" class="btn-primary" type="button">Sign up</button>
+              <button id="auth-login-button" class="btn-ghost" type="button">Log in</button>
+            </div>
+            <p id="auth-feedback" class="auth-feedback"></p>
+          </form>
+        </div>
+
+        <!-- Quick Prompts -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Quick Start</div>
+          <div class="quick-prompts">
+            <button class="quick-prompt-btn" data-prompt="Summarize the uploaded file in simple language.">
+              <span class="qp-icon">📋</span>
+              <span>Summarize a file</span>
+            </button>
+            <button class="quick-prompt-btn" data-prompt="Extract the most important data points from this document.">
+              <span class="qp-icon">🔍</span>
+              <span>Pull key insights</span>
+            </button>
+            <button class="quick-prompt-btn" data-prompt="Describe this image and point out anything unusual.">
+              <span class="qp-icon">🖼️</span>
+              <span>Analyze an image</span>
+            </button>
+            <button class="quick-prompt-btn" data-prompt="Turn these notes into a clean action list.">
+              <span class="qp-icon">✅</span>
+              <span>Create action list</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Session Controls -->
+        <div class="sidebar-bottom">
+          <div id="status-meta" class="status-meta-text"></div>
+          <button id="reset-button" class="btn-reset" type="button">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 1 0 1-2.96" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2 3v4h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            New Session
+          </button>
+        </div>
+      </aside>
+
+      <!-- MOBILE TOPBAR -->
+      <div class="mobile-topbar">
+        <button id="sidebar-toggle" class="sidebar-toggle-btn" type="button" aria-label="Toggle sidebar">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div class="mobile-brand">OMNIBRIDGE</div>
+        <div class="mobile-status-dot" id="mobile-status-dot"></div>
+      </div>
+
+      <!-- CHAT AREA -->
+      <main class="chat-area">
+
+        <!-- Chat Messages -->
+        <section id="messages" class="messages-list">
+          <!-- Hero welcome card -->
+          <div class="chat-welcome" id="hero-card">
+            <div class="chat-welcome-logo">
+              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="32" cy="32" r="26" stroke="url(#wlg1)" stroke-width="2.5"/>
+                <path d="M18 32 C18 23 32 13 46 32 C32 51 18 41 18 32Z" fill="url(#wlg2)" opacity="0.9"/>
+                <circle cx="32" cy="32" r="5.5" fill="white" opacity="0.95"/>
+                <defs>
+                  <linearGradient id="wlg1" x1="6" y1="6" x2="58" y2="58">
+                    <stop offset="0%" stop-color="#7c6dff"/>
+                    <stop offset="100%" stop-color="#38bdf8"/>
+                  </linearGradient>
+                  <linearGradient id="wlg2" x1="18" y1="13" x2="46" y2="51">
+                    <stop offset="0%" stop-color="#7c6dff"/>
+                    <stop offset="100%" stop-color="#38bdf8"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <h2 class="chat-welcome-title">How can I help you today?</h2>
+            <p class="chat-welcome-sub">Ask anything — from analysis and writing to code and images. OMNIBRIDGE understands it all.</p>
+            <div class="chat-welcome-chips">
+              <button class="welcome-chip" data-prompt="What can you do? Give me a brief overview of your capabilities.">✨ What can you do?</button>
+              <button class="welcome-chip" data-prompt="Help me write a professional email to a client.">📧 Write an email</button>
+              <button class="welcome-chip" data-prompt="Explain quantum computing in simple terms.">🔬 Explain a concept</button>
+              <button class="welcome-chip" data-prompt="Review my code and suggest improvements.">💻 Review code</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Composer / Input Area -->
+        <div class="composer-area">
+          <form id="chat-form" class="composer-form" enctype="multipart/form-data">
+
+            <!-- File Preview Row -->
+            <div id="selected-files" class="selected-files"></div>
+
+            <!-- Drop Zone (collapsed by default, opens on click) -->
+            <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Attach files">
+              <div class="dropzone-inner">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3v9M6 8l4-5 4 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 14v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <span class="dropzone-text">Drop files or <strong>click to browse</strong></span>
+                <span class="dropzone-hint" id="dropzone-hint">Screenshots, PDFs, images, CSVs — sign in to upload</span>
+              </div>
+              <input id="file-input" type="file" name="files" multiple hidden>
+            </div>
+
+            <!-- Text Input Row -->
+            <div class="composer-input-row">
+              <button class="composer-attach-btn" type="button" id="pick-files-button" title="Attach files">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M15.5 8.5l-7 7a4.5 4.5 0 0 1-6.364-6.364l7.5-7.5A3 3 0 0 1 13.78 5.78l-7.5 7.5a1.5 1.5 0 0 1-2.121-2.121l6.5-6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <textarea
+                id="message-input"
+                name="message"
+                rows="1"
+                placeholder="Message OMNIBRIDGE…"
+              ></textarea>
+              <button id="send-button" class="composer-send-btn" type="submit" title="Send message">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M15.5 9H2.5M15.5 9l-5-5M15.5 9l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+
+            <!-- Options Row -->
+            <div class="composer-options-row">
+              <label class="private-toggle" for="private-mode-toggle">
+                <input id="private-mode-toggle" type="checkbox" name="private_mode">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-label">Private mode</span>
+              </label>
+              <span id="composer-hint" class="composer-hint-text">Enter to send · Shift+Enter for new line</span>
+            </div>
+          </form>
+
+          <p class="composer-disclaimer">OMNIBRIDGE can make mistakes. Verify important information.</p>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      window.APP_CONFIG = __APP_CONFIG__;
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
