@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_NAME=${DB_NAME:-chatbot}
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    volumes:
+      - ./user_data:/home/app/user_data
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - omnibridge-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - omnibridge-network
+
+  postgres:
+    image: ankane/pgvector:latest
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-password}
+      - POSTGRES_DB=${DB_NAME:-chatbot}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - omnibridge-network
+
+  redis:
+    image: redis:alpine
+    networks:
+      - omnibridge-network
+
+networks:
+  omnibridge-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

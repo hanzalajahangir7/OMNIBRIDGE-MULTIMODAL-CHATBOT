@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: omnibridge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: omnibridge-backend:latest # Build and push to a registry first
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DB_HOST
+          value: postgres
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: POSTGRES_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: POSTGRES_PASSWORD
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: db-secrets
+              key: POSTGRES_DB
+        - name: REDIS_URL
+          value: "redis://redis:6379/0"
+        - name: OLLAMA_BASE_URL
+          value: "http://ollama-service:11434" # External or internal Ollama
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: omnibridge
+spec:
+  ports:
+  - port: 5000
+  selector:
+    app: backend

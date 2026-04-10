@@ -20,6 +20,7 @@ from urllib.parse import parse_qs, quote, urlparse
 import requests
 import io
 from datetime import datetime
+import redis
 
 # --- Optional document parsing libs (graceful fallback if not installed) ---
 try:
@@ -129,6 +130,33 @@ class RouteDecision:
 chat_store: dict[str, ChatState] = {}
 chat_store_lock = threading.Lock()
 ollama_status_cache = {"value": None, "timestamp": 0.0}
+
+# Redis Setup
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+try:
+    redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+    HAS_REDIS = True
+except Exception:
+    HAS_REDIS = False
+
+def get_session_data(session_id: str) -> ChatState | None:
+    if not HAS_REDIS: return chat_store.get(session_id)
+    try:
+        data = redis_client.get(f"session:{session_id}")
+        if data:
+            raw = json.loads(data)
+            return ChatState(text_history=raw.get("text_history", []), uploaded_file_names=raw.get("uploaded_file_names", []))
+    except Exception: pass
+    return chat_store.get(session_id)
+
+def set_session_data(session_id: str, state: ChatState):
+    if not HAS_REDIS:
+        chat_store[session_id] = state
+        return
+    try:
+        redis_client.setex(f"session:{session_id}", 3600*24, json.dumps({"text_history": state.text_history, "uploaded_file_names": state.uploaded_file_names}))
+    except Exception:
+        chat_store[session_id] = state
 
 
 def extract_text_from_file(content: bytes, filename: str, mime_type: str) -> str:
@@ -253,12 +281,14 @@ def select_model(message: str, context: dict) -> RouteDecision:
     if context.get("hasImages"): return RouteDecision("ollama", "Vision Specialist", tokens, OLLAMA_VISION_MODEL)
     return RouteDecision("ollama", "Text Specialist", tokens, OLLAMA_TEXT_MODEL)
 
-async def generate_response(message: str, state: ChatState, context: dict) -> ChatResult:
+def generate_response(message: str, state: ChatState, context: dict) -> ChatResult:
     decision = select_model(message, context)
     return call_ollama(message, state, context.get("ollamaModel") or decision.model, decision, images=context.get("images"), database_user_id=context.get("databaseUserId"), memory_prompt=context.get("memoryPrompt"))
 
 def get_state(session_id: str) -> ChatState:
-    with chat_store_lock: return chat_store.setdefault(session_id, ChatState())
+    state = get_session_data(session_id)
+    if state: return state
+    return ChatState()
 
 def dump_to_local_folder(user_id, email, message, assist_text, provider):
     folder = ROOT_DIR.parent / "user_data"
@@ -314,6 +344,7 @@ class LocalOnlyHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/history": self.handle_history()
         elif parsed.path == "/auth/google/start": self.handle_google_start(parsed)
         elif parsed.path == "/auth/google/callback": self.handle_google_callback(parsed)
+        elif parsed.path == "/health": self.send_json({"status": "ok", "timestamp": time.time()})
         elif parsed.path.startswith(("/static/", "/src/", "/node_modules/")): self.serve_static(parsed.path)
         else: self.serve_index()
 
@@ -495,11 +526,11 @@ class LocalOnlyHandler(BaseHTTPRequestHandler):
             except DatabaseUnavailableError:
                 pass
 
-            res = asyncio.run(generate_response(effective_message, state, {
+            res = generate_response(effective_message, state, {
                 "ollamaReady": runtime["ready"], "ollamaModel": decision.model,
                 "images": imgs_b64, "databaseUserId": db_ctx.user_id if db_ctx else None,
                 "memoryPrompt": db_ctx.prompt if db_ctx else None
-            }))
+            })
             
             dump_to_local_folder(auth.user_id or sid, auth.email, message, res.assistant_text, "ollama")
             
@@ -512,11 +543,13 @@ class LocalOnlyHandler(BaseHTTPRequestHandler):
                 "provider": "ollama", "model": res.model, "routingReason": res.routing_reason,
                 "auth": auth.as_dict()
             })
+            # Persist state back to Redis/Memory
+            set_session_data(sid, state)
         except DatabaseUnavailableError:
-            res = asyncio.run(generate_response(message, state, {
+            res = generate_response(message, state, {
                 "ollamaReady": runtime["ready"], "ollamaModel": decision.model,
                 "images": imgs_b64, "databaseUserId": None, "memoryPrompt": None
-            }))
+            })
             warn_msg = "\n\n*(Note: System performance drivers are still initializing. Full memory and personalization will be restored in 30 seconds. Try again soon!)*"
             self.send_json({
                 "ok": True, "assistantMessage": res.assistant_text + warn_msg, "userMessage": message, 

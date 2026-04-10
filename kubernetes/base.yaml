@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: omnibridge
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secrets
+  namespace: omnibridge
+type: Opaque
+stringData:
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: password
+  POSTGRES_DB: chatbot
