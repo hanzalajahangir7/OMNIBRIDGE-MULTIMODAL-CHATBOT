@@ -68,6 +68,88 @@ Browser
       -> user_data/*.txt for local transcript dumps
 ```
 
+### System Diagram
+
+```text
+╔══════════════════════════════════════════════════════════════════╗
+║                        OMNIBRIDGE                               ║
+║                  Multimodal AI Chatbot System                   ║
+╚══════════════════════════════════════════════════════════════════╝
+
+                        ┌─────────────┐
+                        │   Browser   │
+                        │   Client    │
+                        └──────┬──────┘
+                               │  HTTP
+                               ▼
+               ┌───────────────────────────────┐
+               │         FRONTEND              │
+               │   Vite + TypeScript + Nginx   │
+               │   Guest mode / Auth mode      │
+               └───────────────┬───────────────┘
+                               │  /api  /auth
+                               ▼
+  ┌────────────┐  ┌────────────────────────────┐  ┌─────────────┐
+  │   OLLAMA   │  │       PYTHON BACKEND       │  │    AUTH     │
+  │  AI Models │◀─│   BaseHTTPRequestHandler   │─▶│   SQLite    │
+  │            │  │   ThreadingHTTPServer      │  │             │
+  │ • Text     │  │                            │  │ • email/pw  │
+  │ • Vision   │  │  POST /api/chat            │  │ • Google    │
+  │ • Embed    │  │  GET  /api/history         │  │   OAuth     │
+  │ • Summary  │  │  POST /api/auth/signup     │  │ • Guest     │
+  └────────────┘  │  POST /api/auth/login      │  │   limits    │
+                  │  POST /api/reset           │  └─────────────┘
+                  └──────────────┬─────────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+              ▼                  ▼                  ▼
+  ┌───────────────────┐ ┌──────────────┐ ┌─────────────────────┐
+  │    POSTGRESQL     │ │    REDIS     │ │   LOCAL FILESYSTEM  │
+  │    + pgvector     │ │  (optional)  │ │                     │
+  │                   │ │              │ │  user_data/*.txt    │
+  │ • messages        │ │ • Session    │ │  Chat transcripts   │
+  │ • memory_chunks   │ │   cache      │ │  per user/session   │
+  │ • user_profiles   │ │ • Fallback:  │ │                     │
+  │ • vector search   │ │   in-memory  │ │                     │
+  └───────────────────┘ └──────────────┘ └─────────────────────┘
+
+──────────────────────────────────────────────────────────────────
+  DEPLOYMENT
+──────────────────────────────────────────────────────────────────
+
+  Docker Compose                   Kubernetes
+  ┌─────────────────────────┐      ┌─────────────────────────┐
+  │ frontend                │      │ namespace + secrets     │
+  │ backend                 │      │ frontend deployment     │
+  │ postgres (pgvector)     │      │ backend deployment      │
+  │ redis                   │      │ postgres + redis        │
+  │ → localhost:8080        │      │ ollama + ingress        │
+  └─────────────────────────┘      └─────────────────────────┘
+
+──────────────────────────────────────────────────────────────────
+  ACCESS MODEL
+──────────────────────────────────────────────────────────────────
+
+  Guest user                       Authenticated user
+  ┌─────────────────────────┐      ┌─────────────────────────┐
+  │ ✓ Text chat             │      │ ✓ Text chat             │
+  │ ✗ File / image uploads  │      │ ✓ File / image uploads  │
+  │ ✗ Chat history          │      │ ✓ Chat history          │
+  │ ✗ Personalization       │      │ ✓ Long-term memory      │
+  │ ⚠ 10 message limit      │      │ ✓ User profile          │
+  └─────────────────────────┘      └─────────────────────────┘
+
+──────────────────────────────────────────────────────────────────
+  SUPPORTED UPLOADS
+──────────────────────────────────────────────────────────────────
+
+  Images -> Ollama vision model (base64 encoded)
+  Docs   -> Text extracted, appended to prompt
+            .txt .md .csv .json .py .js .ts
+            .html .css .xml .yaml .pdf .docx
+```
+
 ### Storage split
 
 This project intentionally uses different storage systems for different jobs:
