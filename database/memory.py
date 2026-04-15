@@ -764,30 +764,22 @@ def build_prompt(user_id: str, user_message: str) -> HybridMemoryContext:
     profile.summary = compose_profile_summary(profile)
     behavior_instructions = build_profile_behavior_instructions(profile)
 
-    mem_text = "\n".join(f"- {memory}" for memory in memories) if memories else "- No relevant memory yet."
-    chat_text = "\n".join(f"{role}: {content}" for role, content in recent) if recent else "No recent chat yet."
+    mem_text = "\n".join(f"- {memory}" for memory in memories) if memories else "No specific past memories found for this query."
     instruction_text = (
         "\n".join(f"- {instruction}" for instruction in behavior_instructions)
         if behavior_instructions
-        else "- Keep the answer clear and practical."
+        else "- Stay friendly, helpful, and concise."
     )
 
     prompt = (
-        "[User Intelligence Profile]\n"
-        f"Communication style: {profile.communication_style}\n"
-        f"Expertise level: {profile.expertise_level}\n"
-        f"Preferred tone: {profile.preferred_tone}\n"
-        f"Interests: {', '.join(profile.interests) if profile.interests else 'unknown'}\n"
-        f"Goals: {', '.join(profile.goals) if profile.goals else 'unknown'}\n"
-        f"Summary: {profile.summary}\n\n"
-        "[Behavior Instructions]\n"
+        "### USER CONTEXTUAL DATA\n"
+        f"**Profile Summary:** {profile.summary or 'New user'}\n"
+        f"**Expertise:** {profile.expertise_level}\n"
+        f"**Interests:** {', '.join(profile.interests) if profile.interests else 'None specified'}\n\n"
+        "### PERSONALIZED BEHAVIOR\n"
         f"{instruction_text}\n\n"
-        "[Relevant Memory]\n"
-        f"{mem_text}\n\n"
-        "[Recent Chat]\n"
-        f"{chat_text}\n\n"
-        "[User Message]\n"
-        f"{user_message}"
+        "### RELEVANT LONG-TERM MEMORIES\n"
+        f"{mem_text}\n"
     )
 
     return HybridMemoryContext(

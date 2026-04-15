@@ -81,7 +81,7 @@ from database.memory import (
 )
 
 # LOCAL OLLAMA MODELS
-OLLAMA_TEXT_MODEL = os.getenv("OLLAMA_TEXT_MODEL", "qwen2.5:0.5b")
+OLLAMA_TEXT_MODEL = os.getenv("OLLAMA_TEXT_MODEL", "llama3.2:3b")
 OLLAMA_VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "moondream")
 OLLAMA_FILE_MODEL = os.getenv("OLLAMA_FILE_MODEL", "granite3.2-vision:2b")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
@@ -231,8 +231,11 @@ def get_ollama_runtime(profile: SystemProfile) -> dict:
     return info
 
 def build_ollama_messages(text_history: list[dict], user_text: str, custom_system: str | None = None) -> list[dict]:
-    msgs = [{"role": "system", "content": custom_system or DEFAULT_INSTRUCTIONS}]
-    for turn in text_history[-8:]:
+    sys_content = DEFAULT_INSTRUCTIONS
+    if custom_system:
+        sys_content = f"{DEFAULT_INSTRUCTIONS}\n\n{custom_system}"
+    msgs = [{"role": "system", "content": sys_content}]
+    for turn in text_history[-12:]:
         msgs.append({"role": turn["role"], "content": turn["content"]})
     msgs.append({"role": "user", "content": user_text})
     return msgs
@@ -500,7 +503,7 @@ class LocalOnlyHandler(BaseHTTPRequestHandler):
 
         # Extract text from documents — keep within llama3.2:3b's 4096-token context
         # ~2500 chars ≈ 625 tokens, safe with system prompt + history + response budget
-        MAX_DOC_CHARS = int(os.getenv("MAX_DOC_CHARS", "2500"))
+        MAX_DOC_CHARS = int(os.getenv("MAX_DOC_CHARS", "10000"))
         effective_message = message
         if doc_files:
             extracted_parts = []
