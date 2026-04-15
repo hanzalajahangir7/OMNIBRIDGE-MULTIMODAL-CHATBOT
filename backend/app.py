@@ -561,8 +561,8 @@ class LocalOnlyHandler(BaseHTTPRequestHandler):
 
 def main():
     initialize_auth_store()
-    server = ThreadingHTTPServer(("127.0.0.1", 5000), LocalOnlyHandler)
-    print("Ollama-Only OMNIBRIDGE running at http://127.0.0.1:5000")
+    server = ThreadingHTTPServer(("0.0.0.0", 5000), LocalOnlyHandler)
+    print("Ollama-Only OMNIBRIDGE running at http://0.0.0.0:5000")
     try: server.serve_forever()
     except KeyboardInterrupt: pass
 
