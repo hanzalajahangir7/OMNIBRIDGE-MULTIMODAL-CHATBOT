@@ -106,7 +106,7 @@ def get_embedding(text: str) -> list[float]:
     response = requests.post(
         f"{get_ollama_url()}/api/embeddings",
         json={"model": get_embedding_model(), "prompt": text},
-        timeout=60,
+        timeout=120,
     )
     if not response.ok:
         raise MemoryServiceError(
@@ -133,7 +133,7 @@ def summarize_memory(text: str) -> str:
             ),
             "stream": False,
         },
-        timeout=90,
+        timeout=120,
     )
     if not response.ok:
         raise MemoryServiceError(
@@ -414,7 +414,7 @@ def call_gemini_profile_extraction(prompt: str) -> StructuredUserProfile:
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"responseMimeType": "application/json"},
         },
-        timeout=90,
+        timeout=120,
     )
     if not response.ok:
         raise MemoryServiceError(
@@ -445,7 +445,7 @@ def call_ollama_profile_extraction(prompt: str) -> StructuredUserProfile:
             "stream": False,
             "format": "json",
         },
-        timeout=90,
+        timeout=120,
     )
     if not response.ok:
         raise MemoryServiceError(

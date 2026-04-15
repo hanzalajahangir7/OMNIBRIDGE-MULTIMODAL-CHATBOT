@@ -257,16 +257,16 @@ def stream_ollama_reply(model: str, messages: list[dict], images: list[str] | No
             full_text += content
             if chunk.get("done"): break
         if not full_text:
-            raise RuntimeError("Ollama returned an empty response. The model may still be loading — please try again in a moment.")
+            raise RuntimeError("The system returned an empty response. The engine may still be initializing — please try again in a moment.")
         return full_text
     except requests.exceptions.ConnectTimeout:
-        raise RuntimeError("Cannot reach Ollama. Make sure 'ollama serve' is running.")
+        raise RuntimeError("Cannot reach the core engine. Please ensure the server is fully started.")
     except requests.exceptions.ReadTimeout:
-        raise RuntimeError(f"Ollama timed out after {read_timeout}s. The model '{model}' may still be loading or the input is too large. Try again shortly.")
+        raise RuntimeError(f"The system timed out after {read_timeout}s. The specialized intelligence module may still be loading. Try again shortly.")
     except requests.exceptions.ConnectionError:
-        raise RuntimeError("Ollama is not running. Please start it with: ollama serve")
+        raise RuntimeError("The OMNIBRIDGE engine is offline. Please contact the administrator.")
     except Exception as e:
-        raise RuntimeError(f"Ollama failed: {str(e)}")
+        raise RuntimeError(f"System logic failure: {str(e)}")
 
 def call_ollama(message: str, state: ChatState, model: str, decision: RouteDecision, images: list[str] | None = None, database_user_id: str | None = None, memory_prompt: str | None = None) -> ChatResult:
     assistant_text = stream_ollama_reply(model, build_ollama_messages(state.text_history, message, custom_system=memory_prompt), images=images)
@@ -276,7 +276,7 @@ def call_ollama(message: str, state: ChatState, model: str, decision: RouteDecis
     if database_user_id:
         try: persist_assistant_message(database_user_id, assistant_text)
         except Exception: pass
-    return ChatResult("ollama", "Ollama Local", model, assistant_text, routing_reason=decision.reason, estimated_tokens=decision.estimated_tokens, database_backed=bool(database_user_id))
+    return ChatResult("omnibridge", "OMNIBRIDGE Core", model, assistant_text, routing_reason=decision.reason, estimated_tokens=decision.estimated_tokens, database_backed=bool(database_user_id))
 
 def select_model(message: str, context: dict) -> RouteDecision:
     tokens = estimate_tokens(message)
@@ -315,17 +315,20 @@ class LocalOnlyHandler(BaseHTTPRequestHandler):
         return self._session_id
 
     def send_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK, extra_headers: list = None) -> None:
-        body = json.dumps(payload).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        if getattr(self, "_set_cookie", False):
-            self.send_header("Set-Cookie", f"ollama_desk_session={self._session_id}; Path=/; HttpOnly; SameSite=Lax")
-        if extra_headers:
-            for k, v in extra_headers:
-                self.send_header(k, v)
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            body = json.dumps(payload).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            if getattr(self, "_set_cookie", False):
+                self.send_header("Set-Cookie", f"ollama_desk_session={self._session_id}; Path=/; HttpOnly; SameSite=Lax")
+            if extra_headers:
+                for k, v in extra_headers:
+                    self.send_header(k, v)
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def parse_json_body(self) -> dict:
         clen = int(self.headers.get("Content-Length", "0") or "0")
@@ -341,24 +344,40 @@ class LocalOnlyHandler(BaseHTTPRequestHandler):
         return sid, get_auth_status(sid, token)
 
     def do_GET(self):
-        parsed = urlparse(self.path)
-        if parsed.path == "/api/status": self.handle_status()
-        elif parsed.path == "/api/auth/status": self.handle_auth_status()
-        elif parsed.path == "/api/history": self.handle_history()
-        elif parsed.path == "/auth/google/start": self.handle_google_start(parsed)
-        elif parsed.path == "/auth/google/callback": self.handle_google_callback(parsed)
-        elif parsed.path == "/health": self.send_json({"status": "ok", "timestamp": time.time()})
-        elif parsed.path.startswith(("/static/", "/src/", "/node_modules/")): self.serve_static(parsed.path)
-        else: self.serve_index()
+        try:
+            parsed = urlparse(self.path)
+            if parsed.path == "/api/status": self.handle_status()
+            elif parsed.path == "/api/auth/status": self.handle_auth_status()
+            elif parsed.path == "/api/history": self.handle_history()
+            elif parsed.path == "/auth/google/start": self.handle_google_start(parsed)
+            elif parsed.path == "/auth/google/callback": self.handle_google_callback(parsed)
+            elif parsed.path == "/health": self.send_json({"status": "ok", "timestamp": time.time()})
+            elif parsed.path.startswith(("/static/", "/src/", "/node_modules/")): self.serve_static(parsed.path)
+            else: self.serve_index()
+        except Exception as e:
+            self._handle_unexpected_error(e)
 
     def do_POST(self):
-        parsed = urlparse(self.path)
-        if parsed.path == "/api/chat": self.handle_chat()
-        elif parsed.path == "/api/reset": self.handle_reset()
-        elif parsed.path == "/api/auth/signup": self.handle_auth_signup()
-        elif parsed.path == "/api/auth/login": self.handle_auth_login()
-        elif parsed.path == "/api/auth/logout": self.handle_auth_logout()
-        else: self.send_json({"ok": False, "error": f"Unknown endpoint: {parsed.path}"}, status=HTTPStatus.NOT_FOUND)
+        try:
+            parsed = urlparse(self.path)
+            if parsed.path == "/api/chat": self.handle_chat()
+            elif parsed.path == "/api/reset": self.handle_reset()
+            elif parsed.path == "/api/auth/signup": self.handle_auth_signup()
+            elif parsed.path == "/api/auth/login": self.handle_auth_login()
+            elif parsed.path == "/api/auth/logout": self.handle_auth_logout()
+            else: self.send_json({"ok": False, "error": f"Unknown endpoint: {parsed.path}"}, status=HTTPStatus.NOT_FOUND)
+        except Exception as e:
+            self._handle_unexpected_error(e)
+
+    def _handle_unexpected_error(self, e: Exception):
+        # Ensure we always return JSON error for API calls, but might still serve HTML for index
+        # However the request said "Backend MUST ALWAYS return JSON" especially on errors.
+        try:
+            error_msg = f"Internal Server Error: {str(e)}"
+            print(f"ERROR: {error_msg}")
+            self.send_json({"ok": False, "error": error_msg}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        except:
+            pass
 
     def handle_status(self):
         prof = get_system_profile()
